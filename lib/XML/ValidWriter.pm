@@ -6,16 +6,24 @@ XML::ValidWriter - DOCTYPE driven valid XML output
 
 =head1 SYNOPSIS
 
+   ## As a normal perl object:
+   $writer = XML::ValidWriter->new(
+      DOCTYPE => $xml_doc_type,
+      OUTPUT => \*FH
+   ) ;
+   $writer->startTag( 'b1' ) ;
+   $writer->startTag( 'c2' ) ;
+   $writer->end ;
+
+   ## Writing to a scalar:
+   $writer = XML::ValidWriter->new(
+      DOCTYPE => $xml_doc_type,
+      OUTPUT => \$buf
+   ) ;
+
+   ## Or, in scripting mode:
    use XML::Doctype         NAME => a, SYSTEM_ID => 'a.dtd' ;
    use XML::ValidWriter qw( :all :dtd_tags ) ;
-   #
-   # a.dtd contains:
-   #
-   #   <!ELEMENT a ( b1, b2?, b3* ) >
-   #	  <!ATTLIST   a aa1 CDATA       #REQUIRED >
-   #   <!ELEMENT b1 ( c1 ) >
-   #   <!ELEMENT b2 ( c2 ) >
-   #
    b1 ;                # Emits <a><b1>
    c2( attr=>"val" ) ; # Emits </b1><b2><c2 attr="val">
    endAllTags ;        # Emits </c2></b2></a>
@@ -27,11 +35,14 @@ XML::ValidWriter - DOCTYPE driven valid XML output
    use FooML::Doctype::v1_0001 ;
    use XML::ValidWriter qw( :dtd_tags ) ;
 
-   ## Or as a normal perl object:
-   $writer = XML::ValidWriter->new( ... ) ;
-   $writer->startTag( 'b1' ) ;
-   $writer->startTag( 'c2' ) ;
-   $writer->end ;
+   #
+   # This all assumes that the DTD contains:
+   #
+   #   <!ELEMENT a ( b1, b2?, b3* ) >
+   #	  <!ATTLIST   a aa1 CDATA       #REQUIRED >
+   #   <!ELEMENT b1 ( c1 ) >
+   #   <!ELEMENT b2 ( c2 ) >
+   #
 
 =head1 STATUS
 
@@ -42,16 +53,23 @@ Many methods supplied by XML::Writer are not yet supplied here.
 =head1 DESCRIPTION
 
 This module uses the DTD contained in an XML::Doctype to enable compile-
-and run-time checks of XML output validity.  It also provides methods
-named after the start and end tags contained in the DTD, so an element
-found in the DTD named TABLE will result in any XML::ValidWriter instances
-using that DTD providing the methods
+and run-time checks of XML output validity.  It also provides methods and
+functions named after the elements mentioned in the DTD.  If an
+XML::ValidWriter uses a DTD that mentions the element type TABLE, that
+instance will provide the methods
 
-   $writer->TABLE( ...attrs... ) ;
-   $writer->end_TABLE( ...attrs... ) ;
+   $writer->TABLE( $content, ...attrs... ) ;
+   $writer->start_TABLE( ...attrs... ) ;
+   $writer->end_TABLE() ;
+   $writer->empty_TABLE( ...attrs... ) ;
 
 .  These are created for undeclared elements--those elements not explicitly
-declared using <!ELEMENT ..> tags--as well.
+declared with an <!ELEMENT ..> declaration--as well.  If an element
+type name conflicts with a method, it will not override the internal method.
+
+When an XML::Doctype is parsed, the name of the doctype defines the root
+node of the document.  This name can be changed, though, see L<XML::Doctype>
+for details.
 
 In addition to the object-oriented API, a function API is also provided.
 This allows you to import most of the methods of XML::ValidWriter as functions
@@ -59,8 +77,8 @@ using standard import specifications:
 
    use XML::ValidWriter qw( :all ) ; ## Could list function names instead
 
-You can also import functions named after an XML::Doctype's elements
-if you specify an XML::Doctype:
+C<:all> does not import the functions named after elements mentioned in
+the DTD, you need to import those tags using C<:dtd_tags>:
 
    use XML::Doctype NAME => 'foo', SYSTEM_ID => 'fooml.dtd' ;
    use XML::ValidWriter qw( :all :dtd_tags ) ;
@@ -72,9 +90,6 @@ or
    }
 
    use XML::ValidWriter DOCTYPE => $doctype, qw( :all :dtd_tags ) ;
-
-This only works (at present) if you specify a DOCTYPE or ':dtd_tags'
-argument.  It will be enhanced later.
 
 =head2 XML::Writer API compatibility
 
@@ -273,7 +288,7 @@ my @EXPORT_OK = qw(
    xmlDecl
 ) ;
 
-$VERSION = 0.24 ;
+$VERSION = 0.25 ;
 
 ##
 ## This module can maintain a set of XML::ValidWriter instances,
@@ -526,19 +541,28 @@ sub import {
 
 
 my %escapees ;
-$escapees{'&'} = '&amp;' ;
-$escapees{'<'} = '&lt;'  ;
-$escapees{'>'} = '&gt;'  ;
-$escapees{'"'} = '&quot;';
+$escapees{'&'}   = '&amp;'  ;
+$escapees{'<'}   = '&lt;'   ;
+$escapees{'>'}   = '&gt;'   ;
+$escapees{']>'}  = ']&gt;'  ;
+$escapees{']]>'} = ']]&gt;' ;
+$escapees{'"'}   = '&quot;' ;
+$escapees{"'"}   = '&apos;' ;
 
 # Takes a list, returns a list: don't use in scalar context.
-# This only escapes '<' and '&'.
 sub _esc {
    croak "_esc used in scalar context" unless wantarray ;
    my $text ;
+   if ( $text =~ /([\x00-\x08\x0B\x0C\x0E-\x1F])/ ) {
+      croak sprintf(
+         "Invalid character 0x%02d (^%s) sent",
+         ord $1,
+	 chr( ord( "A" ) + ord( $1 ) - 1 )
+      )
+   }
    return map {
       $text = $_ ;
-      $text =~ s{([&<])}{$escapees{$1}}eg ;
+      $text =~ s{([&<]|^>|^\]>|\]\]>)}{$escapees{$1}}eg ;
       $text ;
    } @_ ;
 }
@@ -546,13 +570,27 @@ sub _esc {
 
 sub _esc1 {
    my $text = shift ;
-   $text =~ s{([&<])}{$escapees{$1}}eg ;
+   if ( $text =~ /([\x00-\x08\x0B\x0C\x0E-\x1F])/ ) {
+      croak sprintf(
+         "Invalid character 0x%02d (^%s) sent",
+         ord $1,
+	 chr( ord( "A" ) + ord( $1 ) - 1 )
+      )
+   }
+   $text =~ s{([&<]|^>|^\]>|\]\]>)}{$escapees{$1}}eg ;
    return $text ;
 }
 
 sub _attr_esc1 {
    my $text = shift ;
-   $text =~ s{([&<"])}{$escapees{$1}}eg ;
+   if ( $text =~ /([\x00-\x08\x0B\x0C\x0E-\x1F])/ ) {
+      croak sprintf(
+         "Invalid character 0x%02d (^%s) sent",
+         ord $1,
+	 chr( ord( "A" ) + ord( $1 ) - 1 )
+      )
+   }
+   $text =~ s{([&<"'])}{$escapees{$1}}eg ;
    return $text ;
 }
 
@@ -560,6 +598,13 @@ sub _attr_esc1 {
 sub _esc_cdata_ends {
    ## This could be very memory hungry, but alas...
    my $text = join( '', @_ ) ;
+   if ( $text =~ /([\x00-\x08\x0B\x0C\x0E-\x1F])/ ) {
+      croak sprintf(
+         "Invalid character 0x%02d (^%s) sent",
+         ord $1,
+	 chr( ord( "A" ) + ord( $1 ) - 1 )
+      )
+   }
    $text =~ s{\]\]>}{]]]]><![CDATA[>}g ;
    return $text ;
 }
@@ -601,8 +646,9 @@ sub characters {
    my $in_cdata_mode ;
 
    if ( $decide_cdata ) {
-      my $esc_count  = 0 ;
+      my $escs = 0 ;
       my $cdata_ends = 0 ;
+      my $cdata_escs = 0 ;
       my $pos ;
 
       ## I assume that splitting CDATA ends between chunks is very
@@ -610,14 +656,17 @@ sub characters {
       ## and use CDATA escapes in a situation where they result in more
       ## bytes out than <& escaping would.
       for ( @_ ) {
-	 $esc_count += tr/<&// ;
+	 $escs += tr/<&// ;
 	 $pos = 0 ;
 	 ++$cdata_ends while ( $pos = index $_, ']]>', $pos + 3 ) >= 0 ;
+	 $cdata_escs += tr/\x00-\x08\x0b\x0c\x0e-\x1f// ;
 	 $length += length $_ ;
       }
-      ## Each &lt; or &amp; is 4 or 5 chars, ]]]]><![CDATA[< is 15.  We
-      ## add 12 since <![CDATA[]]> is 12 chars.
-      $in_cdata_mode = 4.5 * $esc_count > 15 * $cdata_ends + 12 ;
+      ## Each &lt; or &amp; is 4 or 5 chars.
+      ## Each ]]]]><![CDATA[< is 15.
+      ## Each ]]>&#xN;<![CDATA[ is 17 or 18.
+      ## We ## add 12 since <![CDATA[]]> is 12 chars.
+      $in_cdata_mode = 4.5*$escs > 15*$cdata_ends + 17.75*$cdata_escs + 12 ;
    }
    else {
       $in_cdata_mode = $self->{STRAGGLERS} eq ']]>' ;

@@ -72,28 +72,6 @@ sub test_xml_decl {
    ok( $buf, $expected ) ;
 }
 
-sub test_cdata_esc {
-   ## See if contiguously emitted CDATA end sequences are escaped properly
-   package Foo ;
-   $buf = '' ;
-   defaultWriter()->reset ;
-   select_xml( \$buf ) ;
-   ## The extra ()'s are necessary because we didn't import at compile time.
-   xmlDecl() ;
-   start_a()  ;
-   start_b1() ;
-   ## Kick us in to CDATA mode
-   characters( "<<<<<" ) ;
-   ## play games
-   characters( $_ ) for @_ ;
-   end_b1() ;
-   end_a()    ;
-   $buf =~ s{.*<b1>}{}sg ;
-   $buf =~ s{</b1>.*}{}sg ;
-   $buf =~ s{<<<<<}{} ;
-   return $buf ;
-}
-
 my @tests = (
 
 sub {
@@ -311,16 +289,6 @@ sub {
 #   endAllTags() ;
 #   ok( $buf, qq{<a aa1="foo">} ) ;
 #},
-
-##
-## CDATA escape mode tests
-##
-## The '-' characters help with reading test failures.
-##
-sub { ok( test_cdata_esc( ']]>'       ), "<![CDATA[]]]]><![CDATA[>]]>"   ) },
-sub { ok( test_cdata_esc( '-]]>-'     ), "<![CDATA[-]]]]><![CDATA[>-]]>" ) },
-sub { ok( test_cdata_esc( '-]]', '>-' ), "<![CDATA[-]]]]><![CDATA[>-]]>" ) },
-sub { ok( test_cdata_esc( '-]', ']>-' ), "<![CDATA[-]]]]><![CDATA[>-]]>" ) },
 
 ##
 ## OO tests

@@ -6,6 +6,7 @@ lib/XML/ValidWriter.pm
 t/auto.t
 t/cm_re.t
 t/dtd.t
+t/escape.t
 t/foo.t
 t/valid.t
 CHANGES
