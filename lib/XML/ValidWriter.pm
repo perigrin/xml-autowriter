@@ -557,7 +557,7 @@ sub _esc {
       $text = $_ ;
       if ( $text =~ /([\x00-\x08\x0B\x0C\x0E-\x1F])/ ) {
 	 croak sprintf(
-	    "Invalid character 0x%02d (^%s) sent",
+	    "Illegal character 0x%02d (^%s) sent",
 	    ord $1,
 	    chr( ord( "A" ) + ord( $1 ) - 1 )
 	 )
@@ -729,6 +729,7 @@ sub characters {
 	    or croak "$! writing chars in <$open_elt->{NAME}>" ;
       }
       $self->{STRAGGLERS} = '' ;
+#      $self->{CDATA_END_PART} = '' ;
    }
 
    $stack->[-1]->add_content( '#PCDATA' )
@@ -1112,6 +1113,9 @@ corrupt it's well-formedness.
 
 =cut
 
+## This is called everywhere to emit raw characters *except* characters(),
+## which must go direct because it uses STRAGGLERS and CDATA_END_PART
+## differently.
 sub rawCharacters {
    my XML::ValidWriter $self = &_self ;
 
@@ -1120,7 +1124,12 @@ sub rawCharacters {
    return unless grep length $_, @_ ;
 
    if ( ref $to eq 'SCALAR' ) {
-      $$to .= join( '', $self->{STRAGGLERS}, @_ ) ;
+      $$to .= join(
+         '',
+         _esc_cdata_ends( $self->{CDATA_END_PART} ),
+	 $self->{STRAGGLERS},
+	 @_
+      ) ;
       $self->{AT_BOL} = substr( $$to, -1, 1 ) eq "\n" ;
    }
    else {
@@ -1132,8 +1141,12 @@ sub rawCharacters {
 	 last ;
       }
 
-      print $to $self->{STRAGGLERS}, @_ or croak $!;
+      print $to
+         _esc_cdata_ends( $self->{CDATA_END_PART} ),
+         $self->{STRAGGLERS},
+	 @_ or croak $!;
    }
+   $self->{CDATA_END_PART} = '' ;
    $self->{STRAGGLERS} = '' ;
 }
 

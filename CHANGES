@@ -1,6 +1,10 @@
 CHANGES file for XML::ValidWriter and XML::AutoWriter
 
-v0.33 Fri Dec 15 07:02:36 EST 2000
+v.036 Mon Dec 18 07:21:10 EST 2000
+   - Fixed bug where ']' or ']]' at the end of CDATA would not be emitted
+   before a start or empty tag (ie in mixed content).
+
+v0.33-v.035 Fri Dec 15 07:02:36 EST 2000
    - XML::ValidWriter and XML::AutoWriter now croak if any control codes
      other than TAB, CR, or newline (9, 10, 13) are passed.
    - Fixed a bug that kicked out of PCDATA escape mode in to CDATA too easily.

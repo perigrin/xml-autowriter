@@ -22,30 +22,15 @@ my $doctype ;
 my $t = 't' ;
 
 my $dtd = <<TOHERE ;
-<!ELEMENT a ( #PCDATA )>
+<!ELEMENT a (#PCDATA|b)*>
+
+<!ELEMENT b EMPTY >
 
 TOHERE
 
 my $out_name    = "$t/out"  ;
 
 my $buf ;
-
-my %dtd1_elts = (
-   a  => { KIDS => [qw( b1 b2 b3 )],  },
-   b1 => { KIDS => [qw( c1 )], },
-   b2 => { KIDS => [qw( c2 )], },
-   b3 => { KIDS => [qw( c3 )], },
-) ;
-
-sub slurp {
-   my ( $in_name ) = @_ ;
-   open( F, "<$in_name" ) or die "$!: $in_name" ;
-   local $/ = undef ;
-   my $in = join( '', <F> ) ;
-   close F ;
-   $in =~ s/\n//g ;
-   return $in ;
-}
 
 my $xml_decl = qq{<?xml version="1.0"?>} ;
 
@@ -160,6 +145,24 @@ sub { ok( test_cdata_esc( "\t"      ), "\t", "\\t, 0x09, ^I, TAB" ) },
 sub { ok( test_cdata_esc( "\n"      ), "\n", "\\n, 0x0A, ^J, NL"  ) },
 sub { ok( test_cdata_esc( "\r"      ), "\r", "\\r, 0x0D, ^M, CR"  ) },
 
+sub {
+   package Foo ;
+   $buf = '' ;
+   defaultWriter()->reset ;
+   select_xml( \$buf ) ;
+   ## The extra ()'s are necessary because we didn't import at compile time.
+   xmlDecl() ;
+   start_a()  ;
+   ## Kick us in to CDATA mode, but with a closing ']'
+   characters( "<<<<<]" ) ;
+   b() ;
+   end_a()    ;
+   $buf =~ s{.*<a><!\[CDATA\[<<<<<}{}sg ;
+   $buf =~ s{<b />.*}{}sg ;
+   $buf =~ s{\]\]>}{}sg ;
+   ok( $buf, "]" ) ;
+   return $buf ;
+},
 ) ;
 
 plan tests => scalar @tests ;
