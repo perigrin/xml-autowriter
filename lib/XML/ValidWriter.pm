@@ -552,16 +552,16 @@ $escapees{"'"}   = '&apos;' ;
 # Takes a list, returns a list: don't use in scalar context.
 sub _esc {
    croak "_esc used in scalar context" unless wantarray ;
-   my $text = shift ;
-   if ( $text =~ /([\x00-\x08\x0B\x0C\x0E-\x1F])/ ) {
-      croak sprintf(
-         "Invalid character 0x%02d (^%s) sent",
-         ord $1,
-	 chr( ord( "A" ) + ord( $1 ) - 1 )
-      )
-   }
+   my $text ;
    return map {
       $text = $_ ;
+      if ( $text =~ /([\x00-\x08\x0B\x0C\x0E-\x1F])/ ) {
+	 croak sprintf(
+	    "Invalid character 0x%02d (^%s) sent",
+	    ord $1,
+	    chr( ord( "A" ) + ord( $1 ) - 1 )
+	 )
+      }
       $text =~ s{([&<]|^>|^\]>|\]\]>)}{$escapees{$1}}eg ;
       $text ;
    } @_ ;
