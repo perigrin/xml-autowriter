@@ -80,9 +80,12 @@ of automatic start and end tag creation.
 use strict ;
 use vars qw( $VERSION ) ;
 
-$VERSION = 0.3 ;
+$VERSION = 0.38 ;
 
 use Carp ;
+use XML::Doctype;
+use XML::Doctype::ElementDecl;
+use XML::ValidWriter;
 
 use base qw( XML::ValidWriter ) ;
 
@@ -115,15 +118,7 @@ the XML::ValidWriter base class constructor.
 
 =cut
 
-sub new {
-   my $class = shift ;
-   $class = ref $class || $class ;
-
-   my XML::AutoWriter $self = $class->SUPER::new( @_ ) ;
-
-   return $self ;
-}
-
+#sub new is inherited
 
 sub _find_path {
    ## Find a path from $root to $dest by doing a breadth-first
@@ -138,8 +133,8 @@ sub _find_path {
    croak "Unknown tag '$dest'"
       unless $dest eq '#PCDATA' || exists $elts->{$dest} ;
 
-   my $root_elt = $elts->{$root} ;
-
+   require XML::Doctype::ElementDecl;
+   my XML::Doctype::ElementDecl $root_elt = $elts->{$root} ;
    # print STDERR "searching for $root ... $dest\n" ;
 
    return []
@@ -226,11 +221,14 @@ sub characters {
       if ! @$stack && ! defined $self->{EMITTED_ROOT} ;
 
    for ( my $i = $#$stack ; $i >= 0 ; --$i ) {
-      my $path = _find_path( $doctype, $stack->[$i]->{NAME}, '#PCDATA' ) ;
+      my XML::VWElement $elt = $stack->[$i];
+      my $path = _find_path( $doctype, $elt->{NAME}, '#PCDATA' ) ;
 
       if ( defined $path ) {
-         $self->endTag( $stack->[-1]->{NAME} )
-	     while $#$stack > $i ;
+         while ( $#$stack > $i ) {
+	    my XML::VWElement $end_elt = $stack->[-1];
+	    $self->endTag( $end_elt->{NAME} )
+         }
 	 $self->SUPER::startTag( $_ ) for @$path ;
 	 last ;
       }
@@ -269,7 +267,8 @@ sub endTag {
    ## destroy the stack until we have a match, so we can print it
    ## as an error message if we bottom out.
    for ( my $i = $#$stack ; $i >= 0 ; --$i ) {
-      if ( $stack->[$i]->{NAME} eq $tag ) {
+      my XML::VWElement $elt = $stack->[$i];
+      if ( $elt->{NAME} eq $tag ) {
 	 $self->SUPER::endTag() while $#$stack >= $i ;
 	 return ;
       }
@@ -316,10 +315,13 @@ sub startTag {
 	 && $tag ne $doctype->name ;
 
    for ( my $i = $#$stack ; $i >= 0 ; --$i ) {
-      my $path = _find_path( $doctype, $stack->[$i]->{NAME}, $tag ) ;
+      my XML::VWElement $elt = $stack->[$i];
+      my $path = _find_path( $doctype, $elt->{NAME}, $tag ) ;
       if ( defined $path ) {
-         $self->endTag( $stack->[-1]->{NAME} )
-	     while $#$stack > $i ;
+         while ( $#$stack > $i ) {
+            my XML::VWElement $end_elt = $stack->[-1];
+            $self->endTag( $end_elt->{NAME} )
+         }
 	 $self->SUPER::startTag( $_ ) for @$path ;
 	 last ;
       }

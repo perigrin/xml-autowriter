@@ -98,14 +98,7 @@ sub _assemble_re {
 }
 
 sub new {
-   my $class = shift ;
-   $class = ref $class || $class ;
-
-   my XML::Doctype::ElementDecl $self ;
-   {
-      no strict 'refs' ;
-      $self = bless [ \%{"$class\::FIELDS"} ], $class ;
-   }
+   my XML::Doctype::ElementDecl $self = fields::new( shift );
 
    my $cm ; # The XML::Expat::ContentModel object for this DECL.
    ( $self->{NAME}, $cm, $self->{ATTDEFS} ) = @_ ;

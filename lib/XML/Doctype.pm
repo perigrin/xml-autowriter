@@ -87,14 +87,7 @@ $VERSION = 0.11 ;
 =cut
 
 sub new {
-   my $class = shift ;
-   $class = ref $class || $class ;
-
-   my XML::Doctype $self ;
-   {
-      no strict 'refs' ;
-      $self = bless [ \%{"$class\::FIELDS"} ], $class ;
-   }
+   my XML::Doctype $self = fields::new( shift );
 
    return $self unless @_ ;
 
@@ -121,6 +114,7 @@ sub new {
 
    ## Do this here so subclass author won't be suprised when eventually
    ## calling save_as_pm.
+   my $class = ref $self;
    no strict 'refs' ;
    croak "\$$class\::VERSION not defined" 
       unless defined ${"$class\::VERSION"} ;

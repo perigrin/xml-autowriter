@@ -12,6 +12,7 @@ use Test ;
 package main ;
 
 use strict ;
+use IO::File;
 use Test ;
 use XML::Doctype ;
 use UNIVERSAL qw( isa ) ;
@@ -80,7 +81,7 @@ sub {
 
 sub {
    unlink $out_name ;
-   my $f =  new IO::File( ">$out_name" ) ;
+   my $f =  IO::File->new( ">$out_name" ) ;
    my $w = XML::AutoWriter->new(
       DOCTYPE => $doctype,
       OUTPUT  => $f,

@@ -1,20 +1,23 @@
 CHANGES file for XML::ValidWriter and XML::AutoWriter
 
-v.036 Mon Dec 18 07:21:10 EST 2000
+0.38 Tue Mar  9 01:55:33 EST 2004
+   - phashes removed
+
+0.36 Mon Dec 18 07:21:10 EST 2000
    - Fixed bug where ']' or ']]' at the end of CDATA would not be emitted
    before a start or empty tag (ie in mixed content).
 
-v0.33-v.035 Fri Dec 15 07:02:36 EST 2000
+0.33-v.035 Fri Dec 15 07:02:36 EST 2000
    - XML::ValidWriter and XML::AutoWriter now croak if any control codes
      other than TAB, CR, or newline (9, 10, 13) are passed.
    - Fixed a bug that kicked out of PCDATA escape mode in to CDATA too easily.
 
-v0.32 Fri Dec 15 07:02:36 EST 2000
+0.32 Fri Dec 15 07:02:36 EST 2000
    - Reduced number of times '>' is escaped in PCDATA.  It still gets
      turned into '&gt;' gratuitously occasionally, but that's a really
      minor nit, IMHO.
 
-v0.3 Wed Aug  9 11:53:59 EDT 2000
+0.3 Wed Aug  9 11:53:59 EDT 2000
    - Fixed a bug in escaping of CDATA end tags that are split across
      multiple parameters to or calls to characters().  This will use
      a lot of memory if passing big sets of parameters to characters(),
@@ -31,7 +34,7 @@ v0.3 Wed Aug  9 11:53:59 EDT 2000
    - Removed assumption that undeclared elements can contain ANY.
    - Added check to make sure the root node is at least referred-to.
 
-v0.2 Fri Aug  4 13:49:19 EDT 2000
+0.2 Fri Aug  4 13:49:19 EDT 2000
    - fixes a few bugs
    - adds more validity checks
    - renames XML::DTD to be XML::Doctype,

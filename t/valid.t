@@ -15,6 +15,7 @@ use strict ;
 use Test ;
 use XML::Doctype ;
 use UNIVERSAL qw( isa ) ;
+use IO::File;
 
 my $w ;
 my $doctype ;
@@ -84,7 +85,7 @@ sub {
 ##
 sub {
    unlink $out_name ;
-   my $f =  new IO::File( ">$out_name" ) ;
+   my $f = IO::File->new( ">$out_name" ) ;
    my $w = XML::ValidWriter->new(
       DOCTYPE => $doctype,
       OUTPUT  => $f,

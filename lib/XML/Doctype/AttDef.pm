@@ -46,14 +46,7 @@ $VERSION = 0.1 ;
 =cut
 
 sub new {
-   my $class = shift ;
-   $class = ref $class || $class ;
-
-   my XML::Doctype::AttDef $self ;
-   {
-      no strict 'refs' ;
-      $self = bless [ \%{"$class\::FIELDS"} ], $class ;
-   }
+   my XML::Doctype::AttDef $self = fields::new( shift );
 
    ( $self->{NAME}, $self->{TYPE} ) = @_[0,1] ;
    if ( $_[0] =! /^#/ ) {

@@ -288,8 +288,50 @@ my @EXPORT_OK = qw(
    xmlDecl
 ) ;
 
-$VERSION = 0.37 ;
+$VERSION = 0.38;
 
+##
+## A tiny helper class of instances ValidWriter places on the stack as
+## it opens new elements
+##
+package XML::VWElement ;
+
+use fields qw( NAME ELT_DECL CONTENT ) ;
+
+sub new {
+   my $class = shift ;
+   $class = ref $class || $class ;
+
+   my XML::VWElement $self ;
+   {
+      no strict 'refs' ;
+      $self = bless [ \%{"$class\::FIELDS"} ], $class ;
+   }
+
+   my ( $elt_decl ) = @_ ;
+
+   $self->{NAME} = $elt_decl->name ;
+   $self->{ELT_DECL} = $elt_decl ;
+   $self->{CONTENT} = [] ;
+
+   return $self ;
+}
+
+sub add_content {
+   my XML::VWElement $self = shift ;
+
+   for ( @_ ) {
+      if ( ! @{$self->{CONTENT}}
+         || ! ( $_                     eq '#PCDATA' 
+	    &&  $self->{CONTENT}->[-1] eq '#PCDATA'
+	 )
+      ) {
+         push @{$self->{CONTENT}}, $_ ;
+      }
+   }
+}
+
+package XML::ValidWriter;
 ##
 ## This module can maintain a set of XML::ValidWriter instances,
 ## one for each calling package.
@@ -365,14 +407,7 @@ point in the future.
 =cut
 
 sub new {
-   my $class = shift ;
-   $class = ref $class || $class ;
-
-   my XML::ValidWriter $self ;
-   {
-      no strict 'refs' ;
-      $self = bless [ \%{"$class\::FIELDS"} ], $class ;
-   }
+   my XML::ValidWriter $self = fields::new( shift );
    $self->{SHOULD_WARN} = 1 ;
 
    while ( @_ ) {
@@ -633,7 +668,8 @@ sub characters {
    croak "Can't emit characters outside of the root element"
       unless @$stack ;
 
-   my $open_elt = $self->getDoctype->element_decl( $stack->[-1]->{NAME} ) ;
+   my XML::VWElement $end_elt = $stack->[-1];
+   my $open_elt = $self->getDoctype->element_decl( $end_elt->{NAME} ) ;
 
    croak "Element '$open_elt->{NAME}' can't contain #PCDATA"
       unless ! $open_elt || $open_elt->can_contain_pcdata ;
@@ -934,7 +970,7 @@ sub endTag {
       ") when no tags have been emitted" ;
    }
 
-   my $se = pop @$stack ;
+   my XML::VWElement $se = pop @$stack ;
    my $tag = @_ ? shift : $se->{NAME} ;
    croak "Unmatched </$tag>, open tags are: ",
       join( '', map "<$_->{NAME}>", @$stack, $se )
@@ -1582,46 +1618,6 @@ sub DESTROY {
    }
 }
 
-##
-## A tiny helper class of instances ValidWriter places on the stack as
-## it opens new elements
-##
-package XML::VWElement ;
-
-use fields qw( NAME ELT_DECL CONTENT ) ;
-
-sub new {
-   my $class = shift ;
-   $class = ref $class || $class ;
-
-   my XML::VWElement $self ;
-   {
-      no strict 'refs' ;
-      $self = bless [ \%{"$class\::FIELDS"} ], $class ;
-   }
-
-   my ( $elt_decl ) = @_ ;
-
-   $self->{NAME} = $elt_decl->name ;
-   $self->{ELT_DECL} = $elt_decl ;
-   $self->{CONTENT} = [] ;
-
-   return $self ;
-}
-
-sub add_content {
-   my XML::VWElement $self = shift ;
-
-   for ( @_ ) {
-      if ( ! @{$self->{CONTENT}}
-         || ! ( $_                     eq '#PCDATA' 
-	    &&  $self->{CONTENT}->[-1] eq '#PCDATA'
-	 )
-      ) {
-         push @{$self->{CONTENT}}, $_ ;
-      }
-   }
-}
 
 =back
 

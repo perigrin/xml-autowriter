@@ -10,6 +10,8 @@ use strict ;
 use Test ;
 use UNIVERSAL qw( isa ) ;
 
+use XML::Doctype;
+
 my $w ;
 my $dtd = <<TOHERE ;
 <!ELEMENT a ( b1, b2?, b3* ) >
@@ -43,7 +45,7 @@ my %dtd1_elts = (
    c3 => { KIDS => [] },
 ) ;
 
-my $doctype ;
+my XML::Doctype $doctype;
 
 my @tests = (
 
