@@ -288,7 +288,7 @@ my @EXPORT_OK = qw(
    xmlDecl
 ) ;
 
-$VERSION = 0.25 ;
+$VERSION = 0.37 ;
 
 ##
 ## This module can maintain a set of XML::ValidWriter instances,
