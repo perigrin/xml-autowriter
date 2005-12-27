@@ -1,5 +1,8 @@
 CHANGES file for XML::ValidWriter and XML::AutoWriter
 
+0.39 Tue Dec 12 09:26:11 EST 2005
+   - Relicensed to user's choice of GPL, Artistic, or BSD license
+
 0.38 Tue Mar  9 01:55:33 EST 2004
    - phashes removed
 
