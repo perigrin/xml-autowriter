@@ -1,19 +1,15 @@
-use ExtUtils::MakeMaker;
+use inc::Module::Install;
 
-use strict ;
-use vars qw( $VERSION ) ;
+perl_version '5.006001';
+name 'XML-AutoWriter';
+all_from 'lib/XML/AutoWriter.pm';
 
-$VERSION = 0.39;
+requires => 'XML::Parser';
 
-my @programs = qw( ) ;
+build_requires => 'Test';
+build_requires => 'IO::File';
 
-WriteMakefile(
-    'NAME'          => 'XML::AutoWriter',
-    'VERSION'       => $VERSION,
-    'EXE_FILES'     => [ map "bin/$_", @programs ],
-    'PREREQ_PM'     => {
-    },
-    'LIBS'          => [''],   # e.g., '-lm' 
-    'DEFINE'        => '',     # e.g., '-DHAVE_SOMETHING' 
-    'INC'           => '',     # e.g., '-I/usr/include/other' 
-);
+auto_set_repository;
+auto_manifest;
+auto_install;
+WriteAll;
