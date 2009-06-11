@@ -334,7 +334,7 @@ Barrie Slaymaker <barries@slaysys.com>
 
 =head1 COPYRIGHT
 
-This module is Copyright 2000, 2005 Barrie Slaymaker.  All rights reserved.
+This module is Copyright 2000, 2005, 2009 Barrie Slaymaker.  Some rights reserved.
 
 This module is licensed under your choice of the Artistic, BSD or
 General Public License.
