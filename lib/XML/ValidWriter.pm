@@ -305,7 +305,7 @@ sub new {
    my XML::VWElement $self ;
    {
       no strict 'refs' ;
-      $self = bless [ \%{"$class\::FIELDS"} ], $class ;
+      $self = bless {}, $class ;
    }
 
    my ( $elt_decl ) = @_ ;
