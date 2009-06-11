@@ -1,4 +1,15 @@
 package XML::AutoWriter ;
+use strict ;
+use vars qw( $VERSION ) ;
+
+$VERSION = 0.40;
+
+use Carp ;
+use XML::Doctype;
+use XML::Doctype::ElementDecl;
+use XML::ValidWriter;
+
+use base qw( XML::ValidWriter ) ;
 
 =head1 NAME
 
@@ -75,19 +86,6 @@ Explicit end tags may be emitted to prevent unwanted automatic start
 tags, and, in the future, warnings or errors will be available in place
 of automatic start and end tag creation.
 
-=cut
-
-use strict ;
-use vars qw( $VERSION ) ;
-
-$VERSION = 0.38 ;
-
-use Carp ;
-use XML::Doctype;
-use XML::Doctype::ElementDecl;
-use XML::ValidWriter;
-
-use base qw( XML::ValidWriter ) ;
 
 =head1 METHODS AND FUNCTIONS
 
